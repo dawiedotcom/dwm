@@ -50,6 +50,7 @@
 #define INTERSECT(x,y,w,h,m)    (MAX(0, MIN((x)+(w),(m)->wx+(m)->ww) - MAX((x),(m)->wx)) \
                                * MAX(0, MIN((y)+(h),(m)->wy+(m)->wh) - MAX((y),(m)->wy)))
 #define ISVISIBLE(C)            ((C->tags & C->mon->tagset[C->mon->seltags]))
+#define ISPANEL(C)              (!strcmp((C)->name, "xfce4-panel"))
 #define LENGTH(X)               (sizeof X / sizeof X[0])
 #define MOUSEMASK               (BUTTONMASK|PointerMotionMask)
 #define WIDTH(X)                ((X)->w + 2 * (X)->bw)
@@ -319,7 +320,7 @@ applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact)
 
 	/* set minimum possible */
 	*w = MAX(1, *w);
-	*h = MAX(1, *h);
+	*h = MAX(1, *h - panel_height);
 	if (interact) {
 		if (*x > sw)
 			*x = sw - WIDTH(c);
@@ -715,6 +716,7 @@ drawbar(Monitor *m)
 	}
 
 	for (c = m->clients; c; c = c->next) {
+		if (ISPANEL(c)) continue;
 		occ |= c->tags;
 		if (c->isurgent)
 			urg |= c->tags;
@@ -789,8 +791,8 @@ expose(XEvent *e)
 void
 focus(Client *c)
 {
-	if (!c || !ISVISIBLE(c))
-		for (c = selmon->stack; c && !ISVISIBLE(c); c = c->snext);
+	if (!c || !ISVISIBLE(c) || ISPANEL(c))
+		for (c = selmon->stack; c && (!ISVISIBLE(c) || ISPANEL(c)); c = c->snext);
 	if (selmon->sel && selmon->sel != c)
 		unfocus(selmon->sel, 0);
 	if (c) {
